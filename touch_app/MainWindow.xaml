@@ -1,4 +1,4 @@
-﻿<Window x:Class="touch_app.MainWindow"
+<Window x:Class="touch_app.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -7,8 +7,25 @@
         mc:Ignorable="d" WindowStartupLocation="Manual" Loaded="Window_Loaded" Top="0"
         Title="MainWindow" SizeToContent="WidthAndHeight" ResizeMode="CanMinimize">
     <StackPanel >
-        <Button Name="ButtonWifi" IsEnabled="False"
-            Content="Refresh WiFi (Make sure u r not using it)" Margin="20,6" Padding="6" FontSize="14" Background="DarkSalmon" Click="Button_Click"/>
+        <Button Name="ButtonWifi" IsEnabled="False" Visibility="Collapsed" Content="Refresh WiFi (Make sure u r not using it)" 
+            Margin="20,6" Padding="6" FontSize="14" Background="DarkSalmon" Click="Button_Click"/>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="70"/>
+                <ColumnDefinition Width="1.4*"/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition/>
+                <RowDefinition/>
+            </Grid.RowDefinitions>
+            <TextBlock Text="Download: " HorizontalAlignment="Right"/>
+            <TextBlock Name="txtDownload" Grid.Column="1" Text="50 MB" HorizontalAlignment="Left" FontFamily="Rockwell Extra Bold"  Margin="6,1,0,0"/>
+            <TextBlock Grid.Column="2" Text="Wifi Users" HorizontalAlignment="Center"/>
+            <TextBlock Grid.Row="1" Text="Upload: " HorizontalAlignment="Right"/>
+            <TextBlock Grid.Row="1" Name="txtUpload" Grid.Column="1" Text="50 MB" HorizontalAlignment="Left" FontFamily="Rockwell Extra Bold" Margin="6,1,0,0"/>
+            <TextBlock Grid.Row="1" Name="txtWifiUsers" Grid.Column="2" Text="7" HorizontalAlignment="Center" FontFamily="STHupo" FontSize="14" />
+        </Grid>
         <local:lineStats HorizontalAlignment="Left" Margin="4" VerticalAlignment="Top" x:Name="line1"/>
         <local:lineStats HorizontalAlignment="Left" Margin="4" VerticalAlignment="Top" x:Name="line2"/>
         <local:lineStats HorizontalAlignment="Left" Margin="4" VerticalAlignment="Top" x:Name="line3"/>

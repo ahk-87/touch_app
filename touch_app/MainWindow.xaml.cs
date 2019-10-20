@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
+using System.Net.Security;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -15,6 +18,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 
 namespace touch_app
 {
@@ -23,26 +27,109 @@ namespace touch_app
     /// </summary>
     public partial class MainWindow : Window
     {
-
+        const string mainURL = "http://192.168.8.1/html/index.html";
+        const string statisticsURL = "http://192.168.8.1/api/monitoring/traffic-statistics";
+        const string statusURL = "http://192.168.8.1/api/monitoring/status";
         string user1, user2, user3;
         string pass1, pass2, pass3;
+
+        HttpClient client;
+        HttpClientHandler handler;
+
+        DispatcherTimer timer;
 
         public MainWindow()
         {
             InitializeComponent();
+
+            ServicePointManager.ServerCertificateValidationCallback = delegate (
+            Object obj, X509Certificate certificate, X509Chain chain,
+            SslPolicyErrors errors)
+            {
+                return (true);
+            };
 
             extractData();
             line1.setUserPass(user1, pass1);
             line2.setUserPass(user2, pass2);
             line3.setUserPass(user3, pass3);
             line3.collapse();
+
+            handler = new HttpClientHandler();
+            client = new HttpClient(handler);
+            timer = new DispatcherTimer();
+            timer.Interval = new TimeSpan(0, 0, 15);
+            timer.Tick += Timer_Tick;
+            timer.Start();
+        }
+
+        async private void Timer_Tick(object sender, EventArgs e)
+        {
+            string response;
+            try
+            {
+                response = await client.GetStringAsync(statisticsURL);
+                if (response.Contains("error"))
+                {
+                    await client.GetAsync(mainURL);
+                    response = await client.GetStringAsync(statisticsURL);
+                }
+                var match = Regex.Match(response, "<CurrentUpload>(\\d*)</CurrentUpload>");
+                long upload = int.Parse(match.Groups[1].Value);
+                match = Regex.Match(response, "<CurrentDownload>(\\d*)</CurrentDownload>");
+                long download = int.Parse(match.Groups[1].Value);
+                response = await client.GetStringAsync(statusURL);
+                txtWifiUsers.Text = Regex.Match(response, "<CurrentWifiUser>(\\d{0,1})</CurrentWifiUser>").Groups[1].Value;
+                txtWifiUsers.Foreground = Brushes.Black;
+                txtDownload.Text = reformatBytes(download);
+                txtUpload.Text = reformatBytes(upload);
+                if (download > (700 * 1024 * 1024))
+                    txtDownload.Background = Brushes.Red;
+                else if (download > (500 * 1024 * 1024))
+                    txtDownload.Background = Brushes.Orange;
+                else if (download > (300 * 1024 * 1024))
+                    txtDownload.Background = Brushes.Yellow;
+                else
+                    txtDownload.Background = Brushes.White;
+            }
+            catch (Exception ex)
+            {
+                txtDownload.Text = "0";
+                txtUpload.Text = "0";
+                txtWifiUsers.Text = "Error";
+                txtWifiUsers.Foreground = Brushes.Red;
+            }
+        }
+
+        private string reformatBytes(long bytes)
+        {
+            if (bytes < 1024)
+                return bytes.ToString("0.00 bytes");
+            else if (bytes < 1024 * 1024)
+            {
+                double b = bytes / 1024.0;
+                return b.ToString("0.00 KB");
+            }
+            else if (bytes < 1024 * 1024 * 1024)
+            {
+                double b = bytes / 1024.0 / 1024;
+                return b.ToString("0.00 MB");
+            }
+            else if (bytes < 1024 * 1024 * 1024 *1024L)
+            {
+                double b = bytes / 1024.0 / 1024/ 1024;
+                return b.ToString("0.00 GB (Are u crazy?!!)");
+            }
+            return "0";
         }
 
         string wifiUrl, wifiUsername, wifiPassword;
 
-        private void Window_Loaded(object sender, RoutedEventArgs e)
+        async private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             this.Left = SystemParameters.PrimaryScreenWidth - this.ActualWidth;
+
+            Timer_Tick(null, null);
         }
 
         async private void Button_Click(object sender, RoutedEventArgs e)
@@ -82,9 +169,6 @@ namespace touch_app
             }
             catch
             {
-                user1 = "abbas2222"; pass1 = "fdbwer147";
-                user2 = "samir1111"; pass2 = "afh1236";
-                user3 = "shosho1122"; pass3 = "sal14725";
                 ButtonWifi.Visibility = Visibility.Collapsed;
             }
         }

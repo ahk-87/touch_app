@@ -30,10 +30,11 @@ namespace touch_app
         const string loginURL = "https://app.touch.com.lb/touchserver/login.php";
         const string balanceURL = "https://app.touch.com.lb/v2/self/balances.php";
         const string serviceActivationURL = "https://app.touch.com.lb/touchserver/activateservice.php";
+        //action=https://app.touch.com.lb/touchserver/activateservice.php?serviceid=200000021
         const string servicesURL = "https://app.touch.com.lb/v2/self/services.php";
 
         const string token = "APA91bH8keD6_LCneuGnW5g5xyFSl0FvHfXwhtdf_hly9mVsfX5aRcNhb55v4RvDYIwaV08ymsCZRT8cJDkiGrqPTi3QIX2xt2p6mKPqzoKA2gjumYVRsPo";
-        const string twoDayVoiceServiceID = "VOICE2D";
+        const string twoDayVoiceServiceID = "200000021";
         const string webAndTalk = "d";
 
 
@@ -98,7 +99,7 @@ namespace touch_app
 
                 FocusManager.SetFocusedElement(this, textBalance);
             }
-            catch
+            catch (Exception ex)
             {
                 showNoInternetError(true);
             }
@@ -209,27 +210,44 @@ namespace touch_app
                 }
                 else if (data.balances[1].title.text == "2 Days Voice")
                 {
-                    bool preferred = false;
-                    int usedMinutes = int.Parse(data.balances[1].subs[0].value.text.Substring(0, 2).TrimEnd(new char[] { ' ' }));
-                    int usedMinutesWeb = int.Parse(data.balances[2].subs[2].value.text.Substring(0, 2).TrimEnd(new char[] { ' ' }));
-                    int usedMinutesPreferredNumber = int.Parse(data.balances[2].subs[1].value.text.Substring(0, 3).TrimEnd(new char[] { ' ', '/' }));
-                    info.RemainingMinutes = 60 - usedMinutes + 60 - usedMinutesWeb;
-                    if (info.LastCall == 0)
+                    if (data.balances[2].title.text == "Web & Talk")
                     {
-                        info.RemainingMinutesPreferred = 300 - usedMinutesPreferredNumber;
-                        preferred = true;
-                    }
-                    if (info.LastCall > 0)
-                    {
-                        textLastCallRefresh.Visibility = Visibility.Visible;
-                        if (!preferred)
-                            textLastCallRefresh.Text = "Last refresh was on " + info.LastRefresh.ToShortTimeString();
+                        bool preferred = false;
+                        int usedMinutes = int.Parse(data.balances[1].subs[0].value.text.Substring(0, 2).TrimEnd(new char[] { ' ' }));
+                        int usedMinutesWeb = int.Parse(data.balances[2].subs[2].value.text.Substring(0, 2).TrimEnd(new char[] { ' ' }));
+                        int usedMinutesPreferredNumber = int.Parse(data.balances[2].subs[1].value.text.Substring(0, 3).TrimEnd(new char[] { ' ', '/' }));
+                        info.RemainingMinutes = 60 - usedMinutes + 60 - usedMinutesWeb;
+                        if (info.LastCall == 0)
+                        {
+                            info.RemainingMinutesPreferred = 300 - usedMinutesPreferredNumber;
+                            preferred = true;
+                        }
+                        if (info.LastCall > 0)
+                        {
+                            textLastCallRefresh.Visibility = Visibility.Visible;
+                            if (!preferred)
+                                textLastCallRefresh.Text = "Last refresh was on " + info.LastRefresh.ToShortTimeString();
+                            else
+                                textLastCallRefresh.Text = "Preferred";
+                        }
                         else
-                            textLastCallRefresh.Text = "Preferred";
+                        {
+                            textLastCallRefresh.Visibility = Visibility.Collapsed;
+                        }
                     }
                     else
                     {
-                        textLastCallRefresh.Visibility = Visibility.Collapsed;
+                        int usedMinutes = int.Parse(data.balances[1].subs[0].value.text.Substring(0, 2).TrimEnd(new char[] { ' ' }));
+                        info.RemainingMinutes = 60 - usedMinutes;
+                        if (info.LastCall > 0)
+                        {
+                            textLastCallRefresh.Visibility = Visibility.Visible;
+                            textLastCallRefresh.Text = "Last refresh was on " + info.LastRefresh.ToShortTimeString();
+                        }
+                        else
+                        {
+                            textLastCallRefresh.Visibility = Visibility.Collapsed;
+                        }
                     }
 
                     info.ServiceValidity = DateTime.Parse(data.balances[1].valid.boldify);
@@ -314,7 +332,7 @@ namespace touch_app
                     buttonRenew.IsEnabled = true;
                 }
             }
-            catch
+            catch (Exception ex)
             {
                 showNoInternetError(true);
                 buttonRenew.IsEnabled = true;
